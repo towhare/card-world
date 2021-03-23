@@ -42,14 +42,15 @@ function App() {
     // init scene
 
     scene.current = new THREE.Scene();
+    scene.current.background = new THREE.Color(0.1,0.2,0.8);;
 
     // init camera;
     camera.current = new THREE.PerspectiveCamera(45,(window.innerWidth/window.innerHeight),0.1, 1000);
-    camera.current.position.set(0,0,80);
+    camera.current.position.set(0,0,20);
     camera.current.lookAt(scene.current.position);
 
     boxRef.current = initBox();
-    scene.current.add(boxRef.current);
+    //scene.current.add(boxRef.current);
     
     if(conntainerRef.current){
       conntainerRef.current.appendChild(renderer.current.domElement);
@@ -57,6 +58,9 @@ function App() {
         windowResize(window.innerWidth,window.innerHeight);
       })
     }
+
+    const trees = initTrees();
+    scene.current.add(trees);
 
 
 
@@ -147,6 +151,43 @@ function App() {
     return box;
   }
 
+  function initTrees(){
+    const treeGroup = new THREE.Group();
+    const tree = initTreeCard();
+    for(let i = 0 ; i < 30; i++){
+      const positionx = Math.random()*20-10;
+      const positiony = 0;
+      const positionz = Math.random()*3-1.5;
+      const position = new THREE.Vector3(positionx,positiony,positionz);
+      const newTree = tree.clone();
+      const scaleFector = 1 * (1 +  Math.random()*0.1);
+      newTree.scale.set(scaleFector,scaleFector,scaleFector);
+      if(newTree instanceof THREE.Mesh){
+        if(newTree.material){
+          const numb = Math.random()*0.1+0.9;
+          newTree.material.color = new THREE.Color(numb,numb,numb);
+        }
+      }
+      newTree.position.copy(position);
+      treeGroup.add(newTree);
+    }
+    return treeGroup;
+  }
+
+
+  function initTreeCard():THREE.Mesh{
+    const textureLoader = new THREE.TextureLoader();
+    const cardMesh = new THREE.PlaneGeometry(3,3);
+    cardMesh.translate(0,1.5,0)
+    const cardMaterial = new THREE.MeshBasicMaterial({
+      map:textureLoader.load('/assets/images/plants/tree_1.png'),
+      transparent:true,
+      alphaTest:0.4,
+      side:THREE.DoubleSide
+    })
+    const card = new THREE.Mesh(cardMesh,cardMaterial);
+    return card;
+  }
 
   const boxUpdate = (delta:number) => {
     if(boxRef.current){
