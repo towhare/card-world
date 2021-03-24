@@ -28,6 +28,8 @@ function App() {
 
   const controls = useRef<OrbitControls>();
 
+  const textureLoader = useRef<THREE.TextureLoader>(new THREE.TextureLoader());
+
 
   /** */
   // init a three.js renderer camera and scene
@@ -42,12 +44,13 @@ function App() {
     // init scene
 
     scene.current = new THREE.Scene();
-    scene.current.background = new THREE.Color(0.1,0.2,0.8);;
+    scene.current.background = new THREE.Color(0.8,0.8,0.8);;
 
     // init camera;
     camera.current = new THREE.PerspectiveCamera(45,(window.innerWidth/window.innerHeight),0.1, 1000);
-    camera.current.position.set(0,0,20);
-    camera.current.lookAt(scene.current.position);
+    camera.current.position.set(-50,5,20);
+    camera.current.lookAt(new THREE.Vector3(-50,0,0));
+    
 
     boxRef.current = initBox();
     //scene.current.add(boxRef.current);
@@ -59,9 +62,21 @@ function App() {
       })
     }
 
-    const trees = initTrees();
-    scene.current.add(trees);
+    const grassGround = initGround(120,20);
+    scene.current.add(grassGround);
+    
+    const grass = initGrasses(6000,120,20,1);
+    const grass2 = initGrasses(10000,120,20,2);
+    scene.current.add(grass);
+    scene.current.add(grass2);
 
+    const trees = initTrees(40,120,20,1);
+    const trees2 = initTrees(40,120,20,2);
+    const trees3 = initTrees(40,120,20,3);
+    
+    scene.current.add(trees);
+    scene.current.add(trees2);
+    scene.current.add(trees3);
 
 
     windowResize(window.innerWidth,window.innerHeight);
@@ -76,6 +91,8 @@ function App() {
   const initControls = () => {
     if(camera.current && renderer.current){
       controls.current = new OrbitControls(camera.current,renderer.current.domElement);
+      controls.current.target = new THREE.Vector3(-50,0,0)
+      controls.current.update();
     }
   }
 
@@ -151,42 +168,77 @@ function App() {
     return box;
   }
 
-  function initTrees(){
-    const treeGroup = new THREE.Group();
-    const tree = initTreeCard();
-    for(let i = 0 ; i < 30; i++){
-      const positionx = Math.random()*20-10;
+  function initTrees(number:number,w:number,h:number,type:number){
+    const tree = initTreeCard(type);
+    const treeGroup = new THREE.InstancedMesh(tree.geometry,tree.material,number);
+    const dummy = new THREE.Object3D();
+    for(let i = 0 ; i < number; i++){
+      const positionx = Math.random()*w-(w/2);
       const positiony = 0;
-      const positionz = Math.random()*3-1.5;
+      const positionz = Math.random()*h-(h/2);
       const position = new THREE.Vector3(positionx,positiony,positionz);
-      const newTree = tree.clone();
-      const scaleFector = 1 * (1 +  Math.random()*0.1);
-      newTree.scale.set(scaleFector,scaleFector,scaleFector);
-      if(newTree instanceof THREE.Mesh){
-        if(newTree.material){
-          const numb = Math.random()*0.1+0.9;
-          newTree.material.color = new THREE.Color(numb,numb,numb);
-        }
-      }
-      newTree.position.copy(position);
-      treeGroup.add(newTree);
+      dummy.position.copy(position);
+      const scale = Math.random() +1;
+      dummy.scale.set(scale,scale,scale)
+      dummy.updateMatrix();
+      treeGroup.setMatrixAt(i,dummy.matrix);
     }
     return treeGroup;
   }
 
 
-  function initTreeCard():THREE.Mesh{
-    const textureLoader = new THREE.TextureLoader();
+  function initTreeCard(type:number):THREE.Mesh{
+    
     const cardMesh = new THREE.PlaneGeometry(3,3);
     cardMesh.translate(0,1.5,0)
     const cardMaterial = new THREE.MeshBasicMaterial({
-      map:textureLoader.load('/assets/images/plants/tree_1.png'),
+      map:textureLoader.current.load('/assets/images/plants/tree_'+type+'.png'),
       transparent:true,
       alphaTest:0.4,
       side:THREE.DoubleSide
     })
     const card = new THREE.Mesh(cardMesh,cardMaterial);
     return card;
+  }
+
+  function initGround(w:number,h:number):THREE.Mesh{
+    const groundGeometry = new THREE.PlaneGeometry(w,h);
+    const groundMeshMaterial = new THREE.MeshBasicMaterial({
+      color:0x9a5204
+    })
+    const groundGrass = new THREE.Mesh(groundGeometry,groundMeshMaterial);
+    groundGrass.rotation.x = -Math.PI/2;
+    return groundGrass;
+  }
+
+  function initGrassCard(number:number):THREE.Mesh{
+    const cardMesh = new THREE.PlaneGeometry(0.5,0.5);
+    cardMesh.translate(0,0.25,0);
+    const grassCardMaterial = new THREE.MeshBasicMaterial({
+      map:textureLoader.current.load('/assets/images/plants/grass_'+number+'.png'),
+      transparent:true,
+      alphaTest:0.4,
+      side:THREE.DoubleSide
+    })
+    const grassCard = new THREE.Mesh(cardMesh,grassCardMaterial);
+    return grassCard;
+  }
+
+  function initGrasses(number:number,w:number,h:number,grassType:number){
+    const grass = initGrassCard(grassType);
+    const dummy = new THREE.Object3D();
+    const grassGroup = new THREE.InstancedMesh(grass.geometry,grass.material,number);
+    for(let i = 0; i < number; i++){
+      const clonedGrass = grass.clone();
+
+      const newPositionZ = h * Math.random() - (h/2);
+      const newPositionX = w * Math.random() - (w/2);
+
+      dummy.position.set(newPositionX,0,newPositionZ);
+      dummy.updateMatrix();
+      grassGroup.setMatrixAt(i,dummy.matrix);
+    }
+    return grassGroup;
   }
 
   const boxUpdate = (delta:number) => {
