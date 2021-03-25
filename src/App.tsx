@@ -64,6 +64,9 @@ function App() {
 
     const grassGround = initGround(120,20);
     scene.current.add(grassGround);
+
+    const flowers = initFlowers(200,120,20,1);
+    scene.current.add(flowers);
     
     const grass = initGrasses(6000,120,20,1);
     const grass2 = initGrasses(10000,120,20,2);
@@ -186,7 +189,6 @@ function App() {
     return treeGroup;
   }
 
-
   function initTreeCard(type:number):THREE.Mesh{
     
     const cardMesh = new THREE.PlaneGeometry(3,3);
@@ -198,6 +200,35 @@ function App() {
       side:THREE.DoubleSide
     })
     const card = new THREE.Mesh(cardMesh,cardMaterial);
+    return card;
+  }
+
+  function initFlowers(number:number,w:number,h:number,type:number){
+    const flower = initFlowerCard(type);
+    const flowerGroup = new THREE.InstancedMesh(flower.geometry, flower.material, number);
+    const flowerDummy = new THREE.Object3D();
+    for(let i = 0; i < number; i++){
+      const positionx = Math.random() * w - ( w / 2 );
+      const positiony = 0;
+      const positionz = Math.random() * h - ( h / 2 );
+      const position = new THREE.Vector3(positionx,positiony,positionz);
+      flowerDummy.position.copy(position);
+      flowerDummy.updateMatrix();
+      flowerGroup.setMatrixAt(i, flowerDummy.matrix);
+    }
+    return flowerGroup;
+  }
+
+  function initFlowerCard(type:number):THREE.Mesh{
+    const cardMesh = new THREE.PlaneGeometry(2,2);
+    cardMesh.translate(0,1,0);
+    const cardMaterial = new THREE.MeshBasicMaterial({
+      map:textureLoader.current.load('/assets/images/plants/flower_'+type+'.png'),
+      transparent:true,
+      alphaTest:0.4,
+      side:THREE.DoubleSide
+    });
+    const card = new THREE.Mesh(cardMesh, cardMaterial);
     return card;
   }
 

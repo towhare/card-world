@@ -14,3 +14,5 @@ create by create-react-app typescript
 - 社会心理学实验
 - 区块形式的地图
 - 向外扩展的地图
+- 自己区域的编辑模式
+- 角色与地图
