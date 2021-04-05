@@ -10,7 +10,8 @@ import {
   Clock,
   PlaneGeometry,
   TextureLoader,
-  DoubleSide
+  DoubleSide,
+  Group
 } from 'three'
 
 interface NewCharacterProperty{
@@ -48,12 +49,38 @@ interface CharacterProperty {
 
 }
 
+interface CurrentState {
+  /** from state  to  to state */
+  timeperiod:{
+    start:number,
+    end:number
+  },
+  position:{
+    x:number,
+    y:number,
+    z:number
+  }
+}
+
+interface AnimationStateClip{
+  /** array */
+  animationClip:Array<CurrentState>,
+  // if this animation will repeat
+  repeat:boolean,
+  // repeatDuration se
+  repeatDuration:number
+}
+
 export default class Character {
   state:CharacterProperty;
   name:string;
   type:string;
   cardUrl:string|null;
-  renderObj:Mesh;
+  renderObj:Group;
+  animationState:'moving'|'idle';
+  animationClip:{idle:AnimationStateClip};
+  characterMesh:Mesh;
+  clock:Clock;
   constructor({
     maxHP = 100,
     HP = 100,
@@ -69,7 +96,8 @@ export default class Character {
     magic = 1,
     name = 'love',
     type = 'any',
-    newCardUrl = null
+    newCardUrl = null,
+    
   }:NewCharacterProperty={}){
     this.state = this.initState();
     this.state.maxHP = maxHP;
@@ -87,7 +115,64 @@ export default class Character {
     this.name = name;
     this.type = type;
     this.cardUrl = newCardUrl;
-    this.renderObj = this.initRenderObj();
+    this.animationState = 'idle';
+    this.characterMesh = this.initRenderObj();
+    this.renderObj = new Group();
+    this.renderObj.add(this.characterMesh);
+    this.clock = new Clock();
+
+    this.animationClip = {
+      'idle':{
+        animationClip:[{
+          timeperiod:{
+            start:0,
+            end:0.2
+          },
+          position:{
+            x:0,
+            y:0.2,
+            z:0
+          }
+        },
+        {
+          timeperiod:{
+            start:0.2,
+            end:0.4
+          },
+          position:{
+            x:0,
+            y:0.3,
+            z:0
+          }
+        },
+        {
+          timeperiod:{
+            start:0.4,
+            end:0.6
+          },
+          position:{
+            x:0,
+            y:0.2,
+            z:0
+          }
+        },
+        {
+          timeperiod:{
+            start:0.6,
+            end:0.8
+          },
+          position:{
+            x:0,
+            y:0.1,
+            z:0
+          }
+        }
+      ],
+        repeat:true,
+        repeatDuration:1
+      }
+    }
+    // this.clock.start();
   }
 
   initState():CharacterProperty{
@@ -119,6 +204,57 @@ export default class Character {
     })
 
     const characterMesh = new Mesh(characterCardGeometry, characterCardMaterial);
+    const characterGroup = new Group();
+    this.characterMesh = characterMesh;
+    characterGroup.add(characterMesh);
     return characterMesh;
+  }
+
+  animation(delta:number){
+    if(this.animationState === 'idle'){
+
+    }
+  }
+
+  update(delta?:number){
+    const timeFromStart = this.clock.getElapsedTime();
+    
+    function _getCurrentClip(animationClip:AnimationStateClip,currentTime:number):{x:number,y:number,z:number}{
+      let position = {
+        x:0,
+        y:0,
+        z:0
+      }
+      for(let item of animationClip.animationClip ) {
+        if(item.timeperiod.start<currentTime && item.timeperiod.end>currentTime){
+          position.x = item.position.x;
+          position.y = item.position.y;
+          position.z = item.position.z;
+          return position;
+        }
+      }
+      console.log('position.y',position.y)
+      return position;
+    }
+    switch(this.animationState){
+      case 'idle':
+        if(this.animationClip.idle)
+        {
+          const currentTime = timeFromStart % Number(this.animationClip['idle'].repeatDuration);
+          //console.log('currentTime',currentTime)
+          if(currentTime){
+
+            let position = _getCurrentClip(this.animationClip['idle'],currentTime);
+            this.characterMesh.position.x = position.x;
+            this.characterMesh.position.y = position.y;
+            this.characterMesh.position.z = position.z;
+            //console.log(this.characterMesh.position.y)
+          }
+        }
+        
+        break;
+      default:
+        break;
+    }
   }
 }

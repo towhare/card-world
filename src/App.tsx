@@ -111,6 +111,10 @@ function App() {
       const delta = clock.current.getDelta();
       update(delta);
     }
+
+    if(character.current){
+      character.current.update();
+    }
     render();
     animationId.current = requestAnimationFrame(animate)
   }
