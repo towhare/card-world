@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-
+import Character from './card/character'
 function App() {
   /** render Window Container */
   const conntainerRef = useRef<HTMLHeadingElement>(null);
@@ -29,6 +29,8 @@ function App() {
   const controls = useRef<OrbitControls>();
 
   const textureLoader = useRef<THREE.TextureLoader>(new THREE.TextureLoader());
+
+  const character = useRef<Character>();
 
 
   /** */
@@ -80,6 +82,10 @@ function App() {
     scene.current.add(trees);
     scene.current.add(trees2);
     scene.current.add(trees3);
+
+    character.current = new Character();
+    scene.current.add(character.current.renderObj);
+    character.current.renderObj.position.set(-50,0,0);
 
 
     windowResize(window.innerWidth,window.innerHeight);
@@ -260,7 +266,6 @@ function App() {
     const dummy = new THREE.Object3D();
     const grassGroup = new THREE.InstancedMesh(grass.geometry,grass.material,number);
     for(let i = 0; i < number; i++){
-      const clonedGrass = grass.clone();
 
       const newPositionZ = h * Math.random() - (h/2);
       const newPositionX = w * Math.random() - (w/2);

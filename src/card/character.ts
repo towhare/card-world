@@ -7,7 +7,10 @@ import {
   Mesh,
   Object3D,
   MeshBasicMaterial,
-  Clock
+  Clock,
+  PlaneGeometry,
+  TextureLoader,
+  DoubleSide
 } from 'three'
 
 interface NewCharacterProperty{
@@ -26,6 +29,7 @@ interface NewCharacterProperty{
 
   name?:string,
   type?:string,
+  newCardUrl?:string | null
 }
 
 interface CharacterProperty {
@@ -48,6 +52,8 @@ export default class Character {
   state:CharacterProperty;
   name:string;
   type:string;
+  cardUrl:string|null;
+  renderObj:Mesh;
   constructor({
     maxHP = 100,
     HP = 100,
@@ -62,7 +68,8 @@ export default class Character {
     defence = 1,
     magic = 1,
     name = 'love',
-    type = 'any'
+    type = 'any',
+    newCardUrl = null
   }:NewCharacterProperty={}){
     this.state = this.initState();
     this.state.maxHP = maxHP;
@@ -71,7 +78,7 @@ export default class Character {
     this.state.HP = HP;
     this.state.MP = MP;
     this.state.EP = EP;
-
+    
     this.state.exp = exp;
     this.state.moveSpeed = moveSpeed;
     this.state.attack = attack;
@@ -79,6 +86,8 @@ export default class Character {
     this.state.magic = magic;
     this.name = name;
     this.type = type;
+    this.cardUrl = newCardUrl;
+    this.renderObj = this.initRenderObj();
   }
 
   initState():CharacterProperty{
@@ -96,5 +105,20 @@ export default class Character {
       defence:1,
       magic:1
     }
+  }
+
+  // build a character card
+  initRenderObj():Mesh{
+    const characterCardGeometry = new PlaneGeometry(2,2);
+    characterCardGeometry.translate(0,1,0)
+    const characterCardMaterial = new MeshBasicMaterial({
+      map:new TextureLoader().load(this.cardUrl || '/assets/images/character/rabbit.png'),
+      transparent:true,
+      alphaTest:0.4,
+      side:DoubleSide
+    })
+
+    const characterMesh = new Mesh(characterCardGeometry, characterCardMaterial);
+    return characterMesh;
   }
 }
