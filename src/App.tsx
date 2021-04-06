@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three'
+import { Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import Character from './card/character'
 function App() {
@@ -32,6 +33,12 @@ function App() {
 
   const character = useRef<Character>();
 
+  const gamepadController = useRef({
+    up:false,
+    down:false,
+    left:false,
+    right:false
+  });
 
   /** */
   // init a three.js renderer camera and scene
@@ -50,7 +57,7 @@ function App() {
 
     // init camera;
     camera.current = new THREE.PerspectiveCamera(45,(window.innerWidth/window.innerHeight),0.1, 1000);
-    camera.current.position.set(-50,5,20);
+    camera.current.position.set(-50,5,10);
     camera.current.lookAt(new THREE.Vector3(-50,0,0));
     
 
@@ -89,6 +96,7 @@ function App() {
 
 
     windowResize(window.innerWidth,window.innerHeight);
+    initEvent();
     initControls();
     animate();
     return ()=>{
@@ -110,11 +118,23 @@ function App() {
     if(clock.current){
       const delta = clock.current.getDelta();
       update(delta);
+      if(character.current){
+        character.current.movingUp = gamepadController.current.up;
+        character.current.movingDown = gamepadController.current.down;
+        character.current.movingLeft = gamepadController.current.left;
+        character.current.movingRight = gamepadController.current.right;
+        character.current.update(delta);
+        if(camera.current){
+          const cameraPositionCurrent = camera.current.position.clone();
+          const target = character.current.renderObj.position.clone().add(new Vector3(0,5,10));
+          const direction = target.clone().sub(cameraPositionCurrent);
+          camera.current.position.copy(cameraPositionCurrent.add(direction.multiplyScalar(0.04)));
+        }
+        
+      }
     }
 
-    if(character.current){
-      character.current.update();
-    }
+    
     render();
     animationId.current = requestAnimationFrame(animate)
   }
@@ -148,6 +168,45 @@ function App() {
     }
   }
 
+  const keydownFunction = (ev:KeyboardEvent) => {
+    switch(ev.key){
+      case 'a':
+        gamepadController.current.left = true;
+        break;
+      case 'w':
+        gamepadController.current.up = true;
+        break;
+      case 's':
+        gamepadController.current.down = true;
+        break;
+      case 'd':
+        gamepadController.current.right = true;
+        break;
+      default:
+        console.log('default',ev.key);
+        break;
+    }
+  }
+
+  const keyupFunction = (ev:KeyboardEvent) => {
+    switch(ev.key){
+      case 'a':
+        gamepadController.current.left = false;
+        break;
+      case 'w':
+        gamepadController.current.up = false;
+        break;
+      case 's':
+        gamepadController.current.down = false;
+        break;
+      case 'd':
+        gamepadController.current.right = false;
+        break;
+      default:
+        break;
+    }
+  }
+
 
   // reset renderer size and canvas size
   function windowResize(width:number,height:number){
@@ -170,6 +229,11 @@ function App() {
       }
 
     }
+  }
+
+  function initEvent(){
+    document.addEventListener('keydown',keydownFunction)
+    document.addEventListener('keyup',keyupFunction)
   }
 
   function initBox(){
