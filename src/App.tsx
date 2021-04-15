@@ -130,7 +130,6 @@ function App() {
           const direction = target.clone().sub(cameraPositionCurrent);
           camera.current.position.copy(cameraPositionCurrent.add(direction.multiplyScalar(0.04)));
         }
-        
       }
     }
 

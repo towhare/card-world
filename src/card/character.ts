@@ -12,7 +12,10 @@ import {
   TextureLoader,
   DoubleSide,
   Group,
-  Vector3
+  Vector3,
+  NearestFilter,
+  LinearFilter,
+  Texture
 } from 'three'
 
 interface NewCharacterProperty{
@@ -61,6 +64,10 @@ interface CurrentState {
     y:number,
     z:number
   }
+  textureOffset?:{
+    x:number,
+    y:number
+  }
 }
 
 interface AnimationStateClip{
@@ -87,6 +94,7 @@ export default class Character {
   movingDown:boolean;
   movingLeft:boolean;
   movingRight:boolean;
+  characterTexture:Texture;
   constructor({
     maxHP = 100,
     HP = 100,
@@ -122,7 +130,14 @@ export default class Character {
     this.type = type;
     this.cardUrl = newCardUrl;
     this.animationState = 'idle';
-    this.characterMesh = this.initRenderObj();
+
+    this.characterTexture = new TextureLoader().load(this.cardUrl || '/assets/images/assets/sheets/DinoSprites - doux.png');
+    this.characterTexture.magFilter = NearestFilter;
+    this.characterTexture.minFilter = LinearFilter;
+    this.characterTexture.repeat.x = 1/24;
+    this.characterTexture.offset.x = 0/24;
+
+    this.characterMesh = this.initRenderObj(this.characterTexture);
     this.renderObj = new Group();
     this.renderObj.add(this.characterMesh);
     this.clock = new Clock();
@@ -140,8 +155,12 @@ export default class Character {
           },
           position:{
             x:0,
-            y:0.1,
+            y:0,
             z:0
+          },
+          textureOffset:{
+            x:0,
+            y:0
           }
         },
         {
@@ -151,8 +170,12 @@ export default class Character {
           },
           position:{
             x:0,
-            y:0.2,
+            y:0,
             z:0
+          },
+          textureOffset:{
+            x:1/24,
+            y:0
           }
         },
         {
@@ -162,8 +185,12 @@ export default class Character {
           },
           position:{
             x:0,
-            y:0.2,
+            y:0,
             z:0
+          },
+          textureOffset:{
+            x:2/24,
+            y:0
           }
         },
         {
@@ -173,40 +200,112 @@ export default class Character {
           },
           position:{
             x:0,
-            y:0.1,
+            y:0,
             z:0
+          },
+          textureOffset:{
+            x:3/24,
+            y:0
           }
         }
       ],
         repeat:true,
-        repeatDuration:1
+        repeatDuration:0.8
       },
       'moving':{
         animationClip:[{
           timeperiod:{
             start:0,
-            end:0.1
-          },
-          position:{
-            x:0,
-            y:0.2,
-            z:0
-          }
-        },
-        {
-          timeperiod:{
-            start:0.1,
             end:0.2
           },
           position:{
             x:0,
             y:0,
             z:0
+          },
+          textureOffset:{
+            x:4/24,
+            y:0
+          }
+        },
+        {
+          timeperiod:{
+            start:0.2,
+            end:0.4
+          },
+          position:{
+            x:0,
+            y:0,
+            z:0
+          },
+          textureOffset:{
+            x:5/24,
+            y:0
+          }
+        },
+        {
+          timeperiod:{
+            start:0.4,
+            end:0.6
+          },
+          position:{
+            x:0,
+            y:0,
+            z:0
+          },
+          textureOffset:{
+            x:6/24,
+            y:0
+          }
+        },
+        {
+          timeperiod:{
+            start:0.6,
+            end:0.8
+          },
+          position:{
+            x:0,
+            y:0,
+            z:0
+          },
+          textureOffset:{
+            x:7/24,
+            y:0
+          }
+        },
+        {
+          timeperiod:{
+            start:0.8,
+            end:1
+          },
+          position:{
+            x:0,
+            y:0,
+            z:0
+          },
+          textureOffset:{
+            x:8/24,
+            y:0
+          }
+        },
+        {
+          timeperiod:{
+            start:1,
+            end:1.2
+          },
+          position:{
+            x:0,
+            y:0,
+            z:0
+          },
+          textureOffset:{
+            x:9/24,
+            y:0
           }
         }
       ],
         repeat:true,
-        repeatDuration:0.2
+        repeatDuration:1.2
       }
     }
     // this.clock.start();
@@ -227,14 +326,17 @@ export default class Character {
       defence:1,
       magic:1
     }
+
   }
 
   // build a character card
-  initRenderObj():Mesh{
+  initRenderObj(texture:Texture):Mesh{
     const characterCardGeometry = new PlaneGeometry(2,2);
     characterCardGeometry.translate(0,1,0)
+    
+
     const characterCardMaterial = new MeshBasicMaterial({
-      map:new TextureLoader().load(this.cardUrl || '/assets/images/character/rabbit.png'),
+      map:texture,
       transparent:true,
       alphaTest:0.4,
       side:DoubleSide
@@ -274,31 +376,69 @@ export default class Character {
     
     const timeFromStart = this.clock.getElapsedTime();
     
-    function _getCurrentClip(animationClip:AnimationStateClip,currentTime:number):{x:number,y:number,z:number}{
+    function _getCurrentClip(animationClip:AnimationStateClip,currentTime:number):{
+      position:{
+        x:number,
+        y:number,
+        z:number
+      },
+      textureOffset:{
+        x:number,
+        y:number
+      }
+    }{
       let position = {
         x:0,
         y:0,
         z:0
+      }
+      let textureOffset = {
+        x:0,
+        y:0
       }
       for(let item of animationClip.animationClip ) {
         if(item.timeperiod.start<currentTime && item.timeperiod.end>currentTime){
           position.x = item.position.x;
           position.y = item.position.y;
           position.z = item.position.z;
-          return position;
+
+          if(item.textureOffset){
+            textureOffset = item.textureOffset;
+          }
+          return {
+            position,
+            textureOffset
+          };
         }
       }
-      return position;
+      return {
+        position,
+        textureOffset
+      };
     }
 
     this.updateMovingDirection();
     this.renderObj.position.add(this.movingDirection.clone().multiplyScalar(delta));
+    
     if(this.movingUp || this.movingDown || this.movingLeft || this.movingRight){
       this.animationState = 'moving';
     } else {
       this.animationState = 'idle';
     }
-
+    if(this.movingLeft){
+      this.characterMesh.rotation.y = Math.PI;
+    }else{
+      this.characterMesh.rotation.y = 0;
+    }
+    let characterMeshPosition = {
+      x:0,
+      y:0,
+      z:0
+    }
+    let characterTextureOffset = {
+      x:0,
+      y:0
+    }
     switch(this.animationState){
       case 'idle':
         if(this.animationClip.idle)
@@ -307,30 +447,49 @@ export default class Character {
           //console.log('currentTime',currentTime)
           if(currentTime){
 
-            let position = _getCurrentClip(this.animationClip['idle'],currentTime);
-            this.characterMesh.position.x = position.x;
-            this.characterMesh.position.y = position.y;
-            this.characterMesh.position.z = position.z;
-            //console.log(this.characterMesh.position.y)
+            let currentClip = _getCurrentClip(this.animationClip['idle'],currentTime);
+            characterMeshPosition = currentClip.position;
+            characterTextureOffset = currentClip.textureOffset;
           }
         }
         break;
       case 'moving':
         if(this.animationClip.moving){
           const currentTime = timeFromStart % Number(this.animationClip['moving'].repeatDuration);
-          //console.log('currentTime',currentTime)
           if(currentTime){
-
-            let position = _getCurrentClip(this.animationClip['moving'],currentTime);
-            this.characterMesh.position.x = position.x;
-            this.characterMesh.position.y = position.y;
-            this.characterMesh.position.z = position.z;
-            //console.log(this.characterMesh.position.y)
+            let currentClip = _getCurrentClip(this.animationClip['moving'],currentTime);
+            characterMeshPosition = currentClip.position;
+            characterTextureOffset = currentClip.textureOffset;
           }
         }
         break;
       default:
         break;
+    }
+
+    this.characterMesh.position.x = characterMeshPosition.x;
+    this.characterMesh.position.y = characterMeshPosition.y;
+    this.characterMesh.position.z = characterMeshPosition.z;
+
+    this.updateTextureState(characterTextureOffset)
+  }
+
+  updateTextureState(textureOffset:{x:number,y:number}){
+    if(this.characterTexture){
+      this.characterTexture.offset.x = textureOffset.x;
+      this.characterTexture.offset.y = textureOffset.y
+    }
+  }
+
+  /** get current texture offset */
+  getCurrentOffset(current:CurrentState){
+    if(current.textureOffset){
+      return current.textureOffset
+    } else{
+      return {
+        x:0,
+        y:0
+      }
     }
   }
 }
