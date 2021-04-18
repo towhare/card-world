@@ -53,6 +53,18 @@ interface CharacterProperty {
 
 }
 
+interface ActionDescription{
+  animationStateName:string,
+  /** when the action start */
+  startTime:number,
+  /** when the action end  */
+  endTime:number,
+  /** if this action can be canceld */
+  force:boolean,
+  /** action small number actions first */
+  priority:number
+}
+
 interface CurrentState {
   /** from state  to  to state */
   timeperiod:{
@@ -85,15 +97,23 @@ export default class Character {
   type:string;
   cardUrl:string|null;
   renderObj:Group;
-  animationState:'moving'|'idle';
-  animationClip:{idle:AnimationStateClip,moving:AnimationStateClip};
+  animationState:string;
+  animationStateQueue:Array<string>;
+  animationClip:{[key:string]:AnimationStateClip};
   characterMesh:Mesh;
   clock:Clock;
   movingDirection:Vector3;
   movingUp:boolean;
+  /** action attempt default is 'none', 'attack' */
+  actionAttempt:string;
+  /** default state is 'normal' 'attack'/anthing else is special action and can not be deniyd */
+  public action:string;// 'normal' 'attack'
+  actionSheet:{[key:string]:ActionDescription};
   movingDown:boolean;
   movingLeft:boolean;
+  lastVertical:'left'|'right';
   movingRight:boolean;
+  running:boolean;
   characterTexture:Texture;
   constructor({
     maxHP = 100,
@@ -130,12 +150,14 @@ export default class Character {
     this.type = type;
     this.cardUrl = newCardUrl;
     this.animationState = 'idle';
+    this.animationStateQueue = ['idle','idle'];
 
-    this.characterTexture = new TextureLoader().load(this.cardUrl || '/assets/images/assets/sheets/DinoSprites - doux.png');
+    this.characterTexture = new TextureLoader().load(this.cardUrl || '/assets/images/assets/sheets/DinoSprites - mort.png');
     this.characterTexture.magFilter = NearestFilter;
     this.characterTexture.minFilter = LinearFilter;
     this.characterTexture.repeat.x = 1/24;
     this.characterTexture.offset.x = 0/24;
+    this.characterTexture.offset.y = 2/24;
 
     this.characterMesh = this.initRenderObj(this.characterTexture);
     this.renderObj = new Group();
@@ -145,6 +167,19 @@ export default class Character {
     this.movingUp = false;
     this.movingDown = false;
     this.movingLeft = false;
+    this.running = false;
+    this.lastVertical = 'right';
+    this.action = 'normal';
+    this.actionAttempt = 'none';
+    this.actionSheet = {
+      'attack':{
+        animationStateName:'attack',
+        startTime:0,
+        endTime:0.4,
+        force:true,
+        priority:1,
+      }
+    };
     this.movingRight = false;
     this.animationClip = {
       'idle':{
@@ -160,7 +195,7 @@ export default class Character {
           },
           textureOffset:{
             x:0,
-            y:0
+            y:3/24
           }
         },
         {
@@ -175,7 +210,7 @@ export default class Character {
           },
           textureOffset:{
             x:1/24,
-            y:0
+            y:3/24
           }
         },
         {
@@ -190,7 +225,7 @@ export default class Character {
           },
           textureOffset:{
             x:2/24,
-            y:0
+            y:3/24
           }
         },
         {
@@ -205,7 +240,7 @@ export default class Character {
           },
           textureOffset:{
             x:3/24,
-            y:0
+            y:3/24
           }
         }
       ],
@@ -225,7 +260,7 @@ export default class Character {
           },
           textureOffset:{
             x:4/24,
-            y:0
+            y:3/24
           }
         },
         {
@@ -240,7 +275,7 @@ export default class Character {
           },
           textureOffset:{
             x:5/24,
-            y:0
+            y:3/24
           }
         },
         {
@@ -255,7 +290,7 @@ export default class Character {
           },
           textureOffset:{
             x:6/24,
-            y:0
+            y:3/24
           }
         },
         {
@@ -270,7 +305,7 @@ export default class Character {
           },
           textureOffset:{
             x:7/24,
-            y:0
+            y:3/24
           }
         },
         {
@@ -285,7 +320,7 @@ export default class Character {
           },
           textureOffset:{
             x:8/24,
-            y:0
+            y:3/24
           }
         },
         {
@@ -300,12 +335,78 @@ export default class Character {
           },
           textureOffset:{
             x:9/24,
-            y:0
+            y:3/24
           }
         }
       ],
         repeat:true,
         repeatDuration:1.2
+      },
+      'attack':{
+        animationClip:[
+          {
+            timeperiod:{
+              start:0,
+              end:0.1
+            },
+            position:{
+              x:0,
+              y:0,
+              z:0
+            },
+            textureOffset:{
+              x:10/24,
+              y:3/24
+            }
+          },
+          {
+            timeperiod:{
+              start:0,
+              end:0.2
+            },
+            position:{
+              x:0,
+              y:0,
+              z:0
+            },
+            textureOffset:{
+              x:11/24,
+              y:3/24
+            }
+          },
+          {
+            timeperiod:{
+              start:0,
+              end:0.3
+            },
+            position:{
+              x:0,
+              y:0,
+              z:0
+            },
+            textureOffset:{
+              x:12/24,
+              y:3/24
+            }
+          },
+          {
+            timeperiod:{
+              start:0,
+              end:0.4
+            },
+            position:{
+              x:0,
+              y:0,
+              z:0
+            },
+            textureOffset:{
+              x:13/24,
+              y:3/24
+            }
+          },
+        ],
+        repeat:false,
+        repeatDuration:0.4
       }
     }
     // this.clock.start();
@@ -339,7 +440,8 @@ export default class Character {
       map:texture,
       transparent:true,
       alphaTest:0.4,
-      side:DoubleSide
+      side:DoubleSide,
+      depthWrite:true
     })
 
     const characterMesh = new Mesh(characterCardGeometry, characterCardMaterial);
@@ -374,62 +476,72 @@ export default class Character {
 
   update(delta:number = 0.016){
     
-    const timeFromStart = this.clock.getElapsedTime();
     
-    function _getCurrentClip(animationClip:AnimationStateClip,currentTime:number):{
-      position:{
-        x:number,
-        y:number,
-        z:number
-      },
-      textureOffset:{
-        x:number,
-        y:number
-      }
-    }{
-      let position = {
-        x:0,
-        y:0,
-        z:0
-      }
-      let textureOffset = {
-        x:0,
-        y:0
-      }
-      for(let item of animationClip.animationClip ) {
-        if(item.timeperiod.start<currentTime && item.timeperiod.end>currentTime){
-          position.x = item.position.x;
-          position.y = item.position.y;
-          position.z = item.position.z;
-
-          if(item.textureOffset){
-            textureOffset = item.textureOffset;
-          }
-          return {
-            position,
-            textureOffset
-          };
-        }
-      }
-      return {
-        position,
-        textureOffset
-      };
-    }
+    
+    
 
     this.updateMovingDirection();
-    this.renderObj.position.add(this.movingDirection.clone().multiplyScalar(delta));
     
-    if(this.movingUp || this.movingDown || this.movingLeft || this.movingRight){
-      this.animationState = 'moving';
-    } else {
-      this.animationState = 'idle';
+    
+    if(this.action === 'normal'){
+      if(this.movingUp || this.movingDown || this.movingLeft || this.movingRight){
+        this.animationStateQueue[0] = this.animationState;
+        this.animationState = 'moving';
+        this.animationStateQueue[1] = this.animationState;
+      } else {
+        this.animationStateQueue[0] = this.animationState
+        this.animationState = 'idle';
+        this.animationStateQueue[1] = this.animationState;
+      }
     }
+    
+
+    // actions
+    if(this.actionAttempt !== 'none'){
+      //
+      if(this.action !=='normal'){
+        this.animationStateQueue[0] = this.animationStateQueue[1];
+        this.animationStateQueue[1] = this.animationState;
+      }
+      if(this.action !== this.actionAttempt){
+        this.action = this.actionAttempt;
+        this.animationStateQueue[0] = this.animationState;//'idle' 'moving'd
+        const actionInfo = this.actionSheet[this.action];
+        this.animationState = actionInfo.animationStateName;//'attack'
+        this.animationStateQueue[1] = this.animationState;
+
+        // check if this action can be used
+
+
+      }
+    }
+    if(this.action === 'normal'){
+      this.renderObj.position.add(this.movingDirection.clone().multiplyScalar(delta));
+    } else {
+
+    }
+
+    // reset Clock
+    if(this.animationStateQueue[0] !== this.animationStateQueue[1]){
+      this.clock.start();
+    }
+    const timeFromStart = this.clock.getElapsedTime();
+    
+
+
     if(this.movingLeft){
+      
+      this.lastVertical = 'left';
+    }else if (this.movingRight){
+      this.lastVertical = 'right';
+    }
+
+    if(this.lastVertical === 'left'){
       this.characterMesh.rotation.y = Math.PI;
-    }else{
+    } else {
       this.characterMesh.rotation.y = 0;
     }
+
     let characterMeshPosition = {
       x:0,
       y:0,
@@ -445,33 +557,95 @@ export default class Character {
         {
           const currentTime = timeFromStart % Number(this.animationClip['idle'].repeatDuration);
           //console.log('currentTime',currentTime)
-          if(currentTime){
 
-            let currentClip = _getCurrentClip(this.animationClip['idle'],currentTime);
+            let currentClip = this._getCurrentClip(this.animationClip['idle'],currentTime);
             characterMeshPosition = currentClip.position;
             characterTextureOffset = currentClip.textureOffset;
-          }
+          
         }
         break;
       case 'moving':
         if(this.animationClip.moving){
           const currentTime = timeFromStart % Number(this.animationClip['moving'].repeatDuration);
-          if(currentTime){
-            let currentClip = _getCurrentClip(this.animationClip['moving'],currentTime);
+            let currentClip = this._getCurrentClip(this.animationClip['moving'],currentTime);
             characterMeshPosition = currentClip.position;
             characterTextureOffset = currentClip.textureOffset;
-          }
+          
+        }
+        break;
+      case 'attack':
+        console.log('attack');
+        let currentClip = this.actionUpdate(timeFromStart);
+        if(currentClip){
+          characterMeshPosition = currentClip.position;
+          characterTextureOffset = currentClip.textureOffset;
         }
         break;
       default:
+        console.log('default')
         break;
     }
 
     this.characterMesh.position.x = characterMeshPosition.x;
     this.characterMesh.position.y = characterMeshPosition.y;
     this.characterMesh.position.z = characterMeshPosition.z;
-
     this.updateTextureState(characterTextureOffset)
+  }
+
+  actionUpdate(timeFromStart:number){
+    const action = this.action;// attack for example
+    const actionInfo = this.actionSheet[action];
+    const currentTime = timeFromStart;
+    console.log('currentTime',currentTime)
+    if(currentTime > actionInfo.endTime){
+      console.log('action end')
+      this.action = 'normal';
+      this.animationState = 'idle';
+    } else {
+      console.log('action');
+      let currentClip = this._getCurrentClip(this.animationClip[actionInfo.animationStateName],currentTime);
+      return currentClip; 
+    }
+  }
+  private _getCurrentClip(animationClip:AnimationStateClip,currentTime:number):{
+    position:{
+      x:number,
+      y:number,
+      z:number
+    },
+    textureOffset:{
+      x:number,
+      y:number
+    }
+    }{
+    let position = {
+      x:0,
+      y:0,
+      z:0
+    }
+    let textureOffset = {
+      x:0,
+      y:0
+    }
+    for(let item of animationClip.animationClip ) {
+      if(item.timeperiod.start<=currentTime && item.timeperiod.end>currentTime){
+        position.x = item.position.x;
+        position.y = item.position.y;
+        position.z = item.position.z;
+
+        if(item.textureOffset){
+          textureOffset = item.textureOffset;
+        }
+        return {
+          position,
+          textureOffset
+        };
+      }
+    }
+    return {
+      position,
+      textureOffset
+    };
   }
 
   updateTextureState(textureOffset:{x:number,y:number}){

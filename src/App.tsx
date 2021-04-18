@@ -37,7 +37,9 @@ function App() {
     up:false,
     down:false,
     left:false,
-    right:false
+    right:false,
+    run:false,
+    action:false,
   });
 
   /** */
@@ -53,10 +55,9 @@ function App() {
     // init scene
 
     scene.current = new THREE.Scene();
-    scene.current.background = new THREE.Color(0.8,0.8,0.8);;
-
+    scene.current.background = new THREE.Color(0.8,0.8,0.8);
     // init camera;
-    camera.current = new THREE.PerspectiveCamera(45,(window.innerWidth/window.innerHeight),0.1, 1000);
+    camera.current = new THREE.PerspectiveCamera(45,(window.innerWidth/window.innerHeight),0.1, 100);
     camera.current.position.set(-50,5,10);
     camera.current.lookAt(new THREE.Vector3(-50,0,0));
     
@@ -107,9 +108,9 @@ function App() {
   // init orbit controller
   const initControls = () => {
     if(camera.current && renderer.current){
-      controls.current = new OrbitControls(camera.current,renderer.current.domElement);
-      controls.current.target = new THREE.Vector3(-50,0,0)
-      controls.current.update();
+      //controls.current = new OrbitControls(camera.current,renderer.current.domElement);
+      //controls.current.target = new THREE.Vector3(-50,0,0)
+      //controls.current.update();
     }
   }
 
@@ -123,6 +124,7 @@ function App() {
         character.current.movingDown = gamepadController.current.down;
         character.current.movingLeft = gamepadController.current.left;
         character.current.movingRight = gamepadController.current.right;
+        character.current.actionAttempt = gamepadController.current.action?'attack':'none';
         character.current.update(delta);
         if(camera.current){
           const cameraPositionCurrent = camera.current.position.clone();
@@ -181,6 +183,12 @@ function App() {
       case 'd':
         gamepadController.current.right = true;
         break;
+      case 'Shift':
+        gamepadController.current.run = true;
+        break;
+      case 'j':
+        gamepadController.current.action = true;
+        break;
       default:
         console.log('default',ev.key);
         break;
@@ -200,6 +208,12 @@ function App() {
         break;
       case 'd':
         gamepadController.current.right = false;
+        break;
+      case 'Shift':
+        gamepadController.current.run = false;
+        break;
+      case 'j':
+        gamepadController.current.action = false;
         break;
       default:
         break;
