@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three'
 import { Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import Character from './card/character'
+import Character from './card/character';
+import MusicPlayer from './audio/musicPlayer';
 function App() {
   /** render Window Container */
   const conntainerRef = useRef<HTMLHeadingElement>(null);
@@ -24,6 +25,8 @@ function App() {
 
   /** test box */
   const boxRef = useRef<THREE.Object3D>();
+
+  const musicPlayer = useRef<MusicPlayer>(new MusicPlayer());
 
   const animationId = useRef<number>();
 
@@ -61,6 +64,7 @@ function App() {
     camera.current.position.set(-50,5,10);
     camera.current.lookAt(new THREE.Vector3(-50,0,0));
     
+    initBackGroudMusic();
 
     boxRef.current = initBox();
     //scene.current.add(boxRef.current);
@@ -83,9 +87,9 @@ function App() {
     scene.current.add(grass);
     scene.current.add(grass2);
 
-    const trees = initTrees(40,120,20,1);
-    const trees2 = initTrees(40,120,20,2);
-    const trees3 = initTrees(40,120,20,3);
+    const trees = initTrees(10,120,20,1);
+    const trees2 = initTrees(10,120,20,2);
+    const trees3 = initTrees(10,120,20,3);
     
     scene.current.add(trees);
     scene.current.add(trees2);
@@ -104,6 +108,17 @@ function App() {
       disposeScene();
     }
   });
+
+  function initBackGroudMusic(){
+    musicPlayer.current.addMusicFromFile('assets/music/Pleasant Creek Pack/Pleasant Creek.mp3',{
+      key:'normalBackGround1',
+      volume:0.6,
+      playWhenLoaded:true
+    })
+    if(camera.current){
+      camera.current.add(musicPlayer.current.listener);
+    }
+  }
 
   // init orbit controller
   const initControls = () => {
@@ -373,9 +388,20 @@ function App() {
         top:0,
         left:0,
       }
-    } 
-    ref={conntainerRef}
+    }
     >
+      <div style={
+      {
+        width:'100%',
+        height:'100%',
+        position:'absolute',
+        top:0,
+        left:0,
+      }}
+        ref={conntainerRef}
+      >
+
+      </div>
     </div>
   );
 }

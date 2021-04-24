@@ -526,7 +526,7 @@ export default class Character {
       this.clock.start();
     }
     const timeFromStart = this.clock.getElapsedTime();
-    
+    this.actionUpdate(timeFromStart);
 
 
     if(this.movingLeft){
@@ -575,7 +575,7 @@ export default class Character {
         break;
       case 'attack':
         console.log('attack');
-        let currentClip = this.actionUpdate(timeFromStart);
+        let currentClip = this.getActionClip(timeFromStart);
         if(currentClip){
           characterMeshPosition = currentClip.position;
           characterTextureOffset = currentClip.textureOffset;
@@ -593,19 +593,25 @@ export default class Character {
   }
 
   actionUpdate(timeFromStart:number){
-    const action = this.action;// attack for example
+    if(this.action !== 'normal'){
+      const action = this.action;// attack for example
+      const actionInfo = this.actionSheet[action];
+      const currentTime = timeFromStart;
+      console.log('currentTime',currentTime)
+      if(currentTime > actionInfo.endTime){
+        console.log('action end')
+        this.action = 'normal';
+        this.animationState = 'idle';
+      }
+    }
+  }
+
+  getActionClip(timeFromStart:number){
+    const action = this.action;
     const actionInfo = this.actionSheet[action];
     const currentTime = timeFromStart;
-    console.log('currentTime',currentTime)
-    if(currentTime > actionInfo.endTime){
-      console.log('action end')
-      this.action = 'normal';
-      this.animationState = 'idle';
-    } else {
-      console.log('action');
-      let currentClip = this._getCurrentClip(this.animationClip[actionInfo.animationStateName],currentTime);
-      return currentClip; 
-    }
+    let currentClip = this._getCurrentClip(this.animationClip[actionInfo.animationStateName],currentTime);
+    return currentClip; 
   }
   private _getCurrentClip(animationClip:AnimationStateClip,currentTime:number):{
     position:{
