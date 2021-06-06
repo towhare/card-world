@@ -2,7 +2,7 @@
  * A Character
  */
 
-import { stringify } from 'node:querystring'
+
 import {
   Mesh,
   Object3D,
@@ -47,6 +47,7 @@ interface CharacterProperty {
   maxEP:number,
 
   moveSpeed: number,
+  runSpeed:number,
   attack:number,
   defence:number,
   magic:number,
@@ -111,9 +112,9 @@ export default class Character {
   actionSheet:{[key:string]:ActionDescription};
   movingDown:boolean;
   movingLeft:boolean;
+  running:boolean;
   lastVertical:'left'|'right';
   movingRight:boolean;
-  running:boolean;
   characterTexture:Texture;
   constructor({
     maxHP = 100,
@@ -407,6 +408,102 @@ export default class Character {
         ],
         repeat:false,
         repeatDuration:0.4
+      },
+      'running':{
+        animationClip:[
+          {
+            timeperiod:{
+              start:0,
+              end:0.1,
+            },
+            position:{
+              x:0,
+              y:0,
+              z:0
+            },
+            textureOffset:{
+              x:18/24,
+              y:3/24
+            }
+          },
+          {
+            timeperiod:{
+              start:0.1,
+              end:0.2,
+            },
+            position:{
+              x:0,
+              y:0,
+              z:0
+            },
+            textureOffset:{
+              x:19/24,
+              y:3/24
+            }
+          },
+          {
+            timeperiod:{
+              start:0.2,
+              end:0.3,
+            },
+            position:{
+              x:0,
+              y:0,
+              z:0
+            },
+            textureOffset:{
+              x:20/24,
+              y:3/24
+            }
+          },
+          {
+            timeperiod:{
+              start:0.3,
+              end:0.4,
+            },
+            position:{
+              x:0,
+              y:0,
+              z:0
+            },
+            textureOffset:{
+              x:21/24,
+              y:3/24
+            }
+          },
+          {
+            timeperiod:{
+              start:0.4,
+              end:0.5,
+            },
+            position:{
+              x:0,
+              y:0,
+              z:0
+            },
+            textureOffset:{
+              x:22/24,
+              y:3/24
+            }
+          },
+          {
+            timeperiod:{
+              start:0.5,
+              end:0.6,
+            },
+            position:{
+              x:0,
+              y:0,
+              z:0
+            },
+            textureOffset:{
+              x:23/24,
+              y:3/24
+            }
+          },
+        ],
+        repeat:true,
+        repeatDuration:0.6
       }
     }
     // this.clock.start();
@@ -423,6 +520,7 @@ export default class Character {
       maxEP:1,
 
       moveSpeed:3,
+      runSpeed:5,
       attack:1,
       defence:1,
       magic:1
@@ -460,17 +558,18 @@ export default class Character {
   updateMovingDirection(){
     this.movingDirection.x = 0;
     this.movingDirection.z = 0;
+    const speed = this.running?this.state.runSpeed:this.state.moveSpeed;
     if(this.movingUp){
-      this.movingDirection.z -=this.state.moveSpeed;
+      this.movingDirection.z -= speed;
     }
     if(this.movingDown){
-      this.movingDirection.z += this.state.moveSpeed;
+      this.movingDirection.z += speed;
     }
     if(this.movingLeft){
-      this.movingDirection.x -= this.state.moveSpeed;
+      this.movingDirection.x -= speed;
     }
     if(this.movingRight){
-      this.movingDirection.x += this.state.moveSpeed ;
+      this.movingDirection.x += speed;
     }
   }
 
@@ -484,7 +583,12 @@ export default class Character {
     
     
     if(this.action === 'normal'){
-      if(this.movingUp || this.movingDown || this.movingLeft || this.movingRight){
+      
+      if(this.running && (this.movingUp || this.movingDown || this.movingLeft || this.movingRight)){
+        this.animationStateQueue[0] = this.animationState;
+        this.animationState = 'running';
+        this.animationStateQueue[1] = this.animationState;
+      } else if(this.movingUp || this.movingDown || this.movingLeft || this.movingRight){
         this.animationStateQueue[0] = this.animationState;
         this.animationState = 'moving';
         this.animationStateQueue[1] = this.animationState;
@@ -511,7 +615,6 @@ export default class Character {
         this.animationStateQueue[1] = this.animationState;
 
         // check if this action can be used
-
 
       }
     }
@@ -571,6 +674,14 @@ export default class Character {
             characterMeshPosition = currentClip.position;
             characterTextureOffset = currentClip.textureOffset;
           
+        }
+        break;
+      case 'running':
+        if(this.animationClip.running){
+          const currentTime = timeFromStart % Number(this.animationClip['running'].repeatDuration);
+          let currentClip = this._getCurrentClip(this.animationClip['running'],currentTime);
+          characterMeshPosition = currentClip.position;
+          characterTextureOffset = currentClip.textureOffset;
         }
         break;
       case 'attack':
@@ -656,7 +767,7 @@ export default class Character {
 
   updateTextureState(textureOffset:{x:number,y:number}){
     if(this.characterTexture){
-      this.characterTexture.offset.x = textureOffset.x;
+      this.characterTexture.offset.x = (textureOffset.x) + 1/576;
       this.characterTexture.offset.y = textureOffset.y
     }
   }

@@ -57,6 +57,7 @@ export default class MusicPlayer{
       this.audioLoader.load(audioUrl,(buffer)=>{
         this.AudioPool[mapKey].buffer = buffer;
         this.AudioPool[mapKey].loaded = true;
+        
       })
     } else {
       let newAudio = {
@@ -88,7 +89,9 @@ export default class MusicPlayer{
     if(this.AudioPool[key] && this.AudioPool[key].loaded){
       const audio = this.AudioPool[key];
       if(audio.buffer){
+        
         this.sound.setBuffer(audio.buffer);
+        this.sound.setLoop(true);
         this.sound.play();
       }
     }

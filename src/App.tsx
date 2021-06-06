@@ -110,7 +110,7 @@ function App() {
   });
 
   function initBackGroudMusic(){
-    musicPlayer.current.addMusicFromFile('assets/music/Pleasant Creek Pack/Pleasant Creek.mp3',{
+    musicPlayer.current.addMusicFromFile('assets/music/bluebonnet_in_b_major.mp3',{
       key:'normalBackGround1',
       volume:0.6,
       playWhenLoaded:true
@@ -140,6 +140,10 @@ function App() {
         character.current.movingLeft = gamepadController.current.left;
         character.current.movingRight = gamepadController.current.right;
         character.current.actionAttempt = gamepadController.current.action?'attack':'none';
+        character.current.running = gamepadController.current.run;
+        if(gamepadController.current.run){
+          
+        }
         character.current.update(delta);
         if(camera.current){
           const cameraPositionCurrent = camera.current.position.clone();
@@ -187,15 +191,19 @@ function App() {
   const keydownFunction = (ev:KeyboardEvent) => {
     switch(ev.key){
       case 'a':
+      case 'A':
         gamepadController.current.left = true;
         break;
       case 'w':
+      case 'W':
         gamepadController.current.up = true;
         break;
       case 's':
+      case 'S':
         gamepadController.current.down = true;
         break;
       case 'd':
+      case 'D':
         gamepadController.current.right = true;
         break;
       case 'Shift':
@@ -213,15 +221,19 @@ function App() {
   const keyupFunction = (ev:KeyboardEvent) => {
     switch(ev.key){
       case 'a':
+      case 'A':
         gamepadController.current.left = false;
         break;
       case 'w':
+      case 'W':
         gamepadController.current.up = false;
         break;
       case 's':
+      case 'S':
         gamepadController.current.down = false;
         break;
       case 'd':
+      case 'D':
         gamepadController.current.right = false;
         break;
       case 'Shift':
