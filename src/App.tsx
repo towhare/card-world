@@ -240,6 +240,7 @@ function App() {
         gamepadController.current.run = false;
         break;
       case 'j':
+      case 'J':
         gamepadController.current.action = false;
         break;
       default:
