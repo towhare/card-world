@@ -26,16 +26,14 @@ interface SingleAudio{
 }
 
 export default class MusicPlayer{
-  AudioPool:{[key:string]:SingleAudio};
+  AudioPool:Map<string,{loaded?:boolean,buffer?:AudioBuffer}>;
   listener:AudioListener;
   sound:Audio;
   audioLoader:AudioLoader;
   defaultKey?:string;
   audioCount:number;
   constructor(){
-    this.AudioPool = {
-
-    };
+    this.AudioPool = new Map();
     this.audioCount = 0;
     this.listener = new AudioListener();
     this.sound = new Audio(this.listener);
@@ -52,11 +50,12 @@ export default class MusicPlayer{
   }:AudioBufferSetting = {}){
     
     let mapKey = key || audioUrl;
-    if(this.AudioPool[mapKey]){
-      this.AudioPool[mapKey].loaded = false;
+    const audio = this.AudioPool.get(mapKey);
+    if(audio){
+      audio.loaded = false;
       this.audioLoader.load(audioUrl,(buffer)=>{
-        this.AudioPool[mapKey].buffer = buffer;
-        this.AudioPool[mapKey].loaded = true;
+        audio.buffer = buffer;
+        audio.loaded = true;
         
       })
     } else {
@@ -66,13 +65,19 @@ export default class MusicPlayer{
         volume,
         loaded:false
       }
-      this.AudioPool[mapKey] = newAudio;
+
+      this.AudioPool.set(mapKey,newAudio);
+      console.log('set key',this.AudioPool)
       this.audioLoader.load(audioUrl,(buffer)=>{
-        this.AudioPool[mapKey].buffer = buffer;
-        this.AudioPool[mapKey].loaded = true;
-        this.audioCount +=1;
-        if(playWhenLoaded){
-          this.playByKey(mapKey);
+        const audioSetting = this.AudioPool.get(mapKey);
+        if( audioSetting ) {
+          console.log('add buffer',)
+          audioSetting.buffer = buffer;
+          audioSetting.loaded = true;
+          this.audioCount +=1;
+          if(playWhenLoaded){
+            this.playByKey(mapKey);
+          }
         }
       })
     }
@@ -86,14 +91,26 @@ export default class MusicPlayer{
   }
 
   playByKey(key:string){
-    if(this.AudioPool[key] && this.AudioPool[key].loaded){
-      const audio = this.AudioPool[key];
+    const audiosetting = this.AudioPool.get(key);
+    if(audiosetting && audiosetting.loaded){
+      const audio = audiosetting;
       if(audio.buffer){
-        
+        console.log('play',key)
         this.sound.setBuffer(audio.buffer);
         this.sound.setLoop(true);
-        this.sound.play();
+        if( this.sound.isPlaying ) {
+          console.log('is playing')
+        } else {
+          console.log('play')
+          this.sound.play()
+        }
+        
+        
       }
+    } else {
+      console.log('not load or can not find key')
+      console.log('this.AudioPool', this.AudioPool, key);
+      console.log('audiosetting', this.AudioPool.get(key));
     }
   }
 }

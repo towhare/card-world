@@ -16,7 +16,8 @@ import {
   NearestFilter,
   LinearFilter,
   Texture,
-  RepeatWrapping
+  RepeatWrapping,
+  MirroredRepeatWrapping
 } from 'three'
 
 interface NewCharacterProperty{
@@ -154,12 +155,12 @@ export default class Character {
     this.animationState = 'idle';
     this.animationStateQueue = ['idle','idle'];
 
-    this.characterTexture = new TextureLoader().load(this.cardUrl || '/assets/images/assets/sheets/DinoSprites - mort.png');
+    this.characterTexture = new TextureLoader().load(this.cardUrl || './assets/images/assets/sheets/DinoSprites - mort.png');
     this.characterTexture.magFilter = NearestFilter;
     this.characterTexture.minFilter = LinearFilter;
     this.characterTexture.repeat.x = 1/24;
-    this.characterTexture.wrapS = RepeatWrapping;
-    this.characterTexture.wrapT = RepeatWrapping;
+    this.characterTexture.wrapS = MirroredRepeatWrapping;
+    this.characterTexture.wrapT = MirroredRepeatWrapping;
     this.characterTexture.offset.x = 0/24;
     this.characterTexture.offset.y = 2/24;
 

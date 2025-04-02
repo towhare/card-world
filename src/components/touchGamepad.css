@@ -1,0 +1,26 @@
+.gamepadContainer{
+  width: 200px;
+  height: 200px;
+  background-color: rgba(255,255,255,0.6);
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  border-radius: 50%;
+  user-select: none;
+  overflow: hidden;
+  
+}
+.gamepadContainer .pad{
+  width:30px;
+  height:30px;
+  border-radius: 50%;
+  position:absolute;
+  top:50%;
+  left: 50%;
+  margin-left:-15px;
+  margin-top:-15px;
+  background-color: #fff;
+  pointer-events: none;
+  user-select: none;
+  
+}

@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three'
+import "./App.css"
 import { Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import Character from './card/character';
 import MusicPlayer from './audio/musicPlayer';
+import TouchGamepad from './components/TouchGamepad'
 function App() {
   /** render Window Container */
   const conntainerRef = useRef<HTMLHeadingElement>(null);
@@ -35,6 +37,8 @@ function App() {
   const textureLoader = useRef<THREE.TextureLoader>(new THREE.TextureLoader());
 
   const character = useRef<Character>();
+
+  const [startClick, setStartClick] = useState<boolean>(false)
 
   const gamepadController = useRef({
     up:false,
@@ -104,16 +108,19 @@ function App() {
     initEvent();
     initControls();
     animate();
+    window.addEventListener("scroll",(e)=>{
+      e.preventDefault();
+    })
     return ()=>{
       disposeScene();
     }
-  });
+  },[]);
 
   function initBackGroudMusic(){
-    musicPlayer.current.addMusicFromFile('assets/music/bluebonnet_in_b_major.mp3',{
-      key:'normalBackGround1',
+    musicPlayer.current.addMusicFromFile('./assets/music/bluebonnet_in_b_major.mp3',{
+      key:"normalBackGround1",
       volume:0.6,
-      playWhenLoaded:true
+      playWhenLoaded:false
     })
     if(camera.current){
       camera.current.add(musicPlayer.current.listener);
@@ -309,7 +316,7 @@ function App() {
     const cardMesh = new THREE.PlaneGeometry(3,3);
     cardMesh.translate(0,1.5,0)
     const cardMaterial = new THREE.MeshBasicMaterial({
-      map:textureLoader.current.load('/assets/images/plants/tree_'+type+'.png'),
+      map:textureLoader.current.load('./assets/images/plants/tree_'+type+'.png'),
       transparent:true,
       alphaTest:0.4,
       side:THREE.DoubleSide
@@ -338,7 +345,7 @@ function App() {
     const cardMesh = new THREE.PlaneGeometry(2,2);
     cardMesh.translate(0,1,0);
     const cardMaterial = new THREE.MeshBasicMaterial({
-      map:textureLoader.current.load('/assets/images/plants/flower_'+type+'.png'),
+      map:textureLoader.current.load('./assets/images/plants/flower_'+type+'.png'),
       transparent:true,
       alphaTest:0.4,
       side:THREE.DoubleSide
@@ -361,7 +368,7 @@ function App() {
     const cardMesh = new THREE.PlaneGeometry(0.5,0.5);
     cardMesh.translate(0,0.25,0);
     const grassCardMaterial = new THREE.MeshBasicMaterial({
-      map:textureLoader.current.load('/assets/images/plants/grass_'+number+'.png'),
+      map:textureLoader.current.load('./assets/images/plants/grass_'+number+'.png'),
       transparent:true,
       alphaTest:0.4,
       side:THREE.DoubleSide
@@ -413,8 +420,46 @@ function App() {
       }}
         ref={conntainerRef}
       >
-
+        <TouchGamepad touchControlEvent={(direction)=>{
+          
+          const length = direction.length();
+          const bound = 0.2;
+          gamepadController.current.left = false;
+          gamepadController.current.right = false;
+          gamepadController.current.up = false;
+          gamepadController.current.down = false;
+          if( direction.x < bound && direction.x > -bound && direction.y < bound && direction.y > -bound ){
+            
+          }
+          if( length > 0.7 ) {
+            gamepadController.current.run = true;
+          } else {
+            gamepadController.current.run = false;
+          }
+          if( direction.x > bound){
+            gamepadController.current.right = true;
+            gamepadController.current.left = false;
+          }
+          if( direction.x < -bound ){
+            gamepadController.current.left = true;
+            gamepadController.current.right = false;
+          }
+          if( direction.y > bound){
+            gamepadController.current.up = true;
+            gamepadController.current.down = false;
+          }
+          if( direction.y < -bound ){
+            gamepadController.current.down = true;
+            gamepadController.current.up = false;
+          }
+        }}/>
+        
       </div>
+      <button className="start" style={{display:startClick?"none":"block"}} onClick={()=>{
+          setStartClick(true);
+          musicPlayer.current.playByKey("normalBackGround1");
+          window.document.body.requestFullscreen();
+        }}>start</button>
     </div>
   );
 }
